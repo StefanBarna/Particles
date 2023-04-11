@@ -1,6 +1,7 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
+#include <cmath>
 #include "Particle.h"
 
 #define m_width (m_br.x - tl.x)
@@ -33,8 +34,11 @@ public:
 	// checks for particle collisions with border
 	void borderCheck(const float dt);
 
-	// solves the collision of two particles
-	void particleCollide(Particle* p1, Particle* p2);
+	// resolves overlap of two colliding particles; returns the point at which the collision occurs
+	float resolveOverlap(Particle* p1, Particle* p2, const float dt);
+
+	// solves the posiiton of two particles after collision
+	void particleCollide(Particle* p1, Particle* p2, const float dt, const float t);
 
 	// updates all system information
 	void update(const float dt);

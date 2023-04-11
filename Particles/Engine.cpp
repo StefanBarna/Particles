@@ -81,7 +81,7 @@ HRESULT Engine::Initialize() {
 			m_pSys = new System(
 				Vector2D(clrect.left + (clrect.bottom / 10), clrect.top + (clrect.bottom / 10)),
 				Vector2D(clrect.right - (clrect.right / 3), clrect.bottom - (clrect.bottom / 10)),
-				1
+				2
 			);
 
 			ShowWindow(m_hwnd, SW_SHOWNORMAL);
