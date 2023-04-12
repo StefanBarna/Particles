@@ -1,7 +1,11 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
+#include <algorithm>
 #include <cmath>
+#include <list>
+#include <utility>
+#include <random>
 #include "Particle.h"
 
 #define m_width (m_br.x - tl.x)
@@ -17,7 +21,7 @@ class System {
 
 public:
 	// class constructor
-	System(Vector2D tl, Vector2D br, size_t cnt, UINT pen = 0x1F2F6F7);
+	System(Vector2D tl, Vector2D br, size_t cnt, UINT pen = 0xa4cbdb);
 
 	// queries
 	Vector2D gettl() const;
@@ -33,6 +37,12 @@ public:
 
 	// checks for particle collisions with border
 	void borderCheck(const float dt);
+
+	// employs sweep and prune algorithm to deduce possible collisions
+	std::list<std::pair<Particle*, Particle*>> broadDetect();
+
+	// checks that possible collisions are actual collisions and deals with them
+	void narrowDetect(std::list<std::pair<Particle*, Particle*>> col, const float dt);
 
 	// resolves overlap of two colliding particles; returns the point at which the collision occurs
 	float resolveOverlap(Particle* p1, Particle* p2, const float dt);

@@ -7,7 +7,7 @@ System::System(Vector2D tl, Vector2D br, size_t cnt, UINT pen) :
 	for (size_t i = 0; i < m_cnt; ++i) {
 		// TODO: maxwell-boltzmann distribution of energies translated into velocity with KE formula
 		// TODO: radomize positions (below is a temporary implementation for testing)
-		m_particles[i] = new Particle(Vector2D(200.0f + (50.0f * i), 200.0f + (2.0f * i)), Vector2D(200.0f * (i + 1), 200.0f * (i + 1)), 10.0f, 10.0f, 0xa4cbdb);
+		m_particles[i] = new Particle(Vector2D(350.0f - (50.0f * i), 350.0f), Vector2D(200.0f + (i * 40.f), 200.0f + (i * 40.f)), 10.0f, 10.0f, 0xa4cbdb);
 	}
 }
 
@@ -66,6 +66,42 @@ void System::borderCheck(const float dt) {
 			p->pos().sety(lerpt(pi.y(), p->pos().y(), t));
 			p->pos().sety(p->pos().y() + (p->vel().y() * lerpt(dt, 0, t)));
 		}
+	}
+}
+
+std::list<std::pair<Particle*, Particle*>> System::broadDetect() {
+	// takes all existing particles in the system, and sorts them based on left bound location
+	std::sort(m_particles, m_particles + m_cnt, 
+		[](Particle* a, Particle* b) { return a->pos().x() - a->rad() < b->pos().x() - b->rad(); });
+	
+	// begin sweep and prune algorithm
+	std::list<Particle*> active;
+	std::list<std::pair<Particle*, Particle*>> col;
+
+	for (int i = 0; i < m_cnt - 1; ++i) {
+		active.push_back(m_particles[i]);
+		auto it = active.begin();
+		while (it != active.end()) {
+			if ((*it)->pos().x() + (*it)->rad() >
+				m_particles[i + 1]->pos().x() - m_particles[i + 1]->rad()) {
+				col.push_back(std::pair<Particle*, Particle*>(*it, m_particles[i + 1]));
+				++it;
+			}
+			else
+				it = active.erase(it);
+		}
+	}
+	
+	return col;
+}
+
+void System::narrowDetect(std::list<std::pair<Particle*, Particle*>> col, const float dt) {
+	for (auto it = col.begin(); it != col.end(); ++it) {
+		if ((it->first->rad() + it->second->rad()) * (it->first->rad() + it->second->rad())
+		> (it->second->pos().x() - it->first->pos().x()) * (it->second->pos().x() - it->first->pos().x())
+			+ (it->second->pos().y() - it->first->pos().y()) * (it->second->pos().y() - it->first->pos().y()))
+			particleCollide(it->first, it->second, dt,
+				resolveOverlap(it->first, it->second, dt));
 	}
 }
 
@@ -134,16 +170,11 @@ void System::update(const float dt) {
 	for (size_t i = 0; i < m_cnt; ++i)
 		m_particles[i]->update(dt);
 
-	// resolve border collisions
+	// check for border collisions and resolve them
 	borderCheck(dt);
 
-	// check for collisions
-
-	// resolve existing collisions
-	// TODO: temporary fix for testing:
-	if (m_particles[0]->rad() + m_particles[1]->rad() > sqrt((m_particles[0]->pos().x() - m_particles[1]->pos().x()) * (m_particles[0]->pos().x() - m_particles[1]->pos().x()) + (m_particles[0]->pos().y() - m_particles[1]->pos().y()) * (m_particles[0]->pos().y() - m_particles[1]->pos().y())))
-		particleCollide(m_particles[0], m_particles[1], dt,
-			resolveOverlap(m_particles[0], m_particles[1], dt));
+	// check for particle collisions and resolve them
+	narrowDetect(broadDetect(), dt);
 }
 
 void System::display(ID2D1HwndRenderTarget* target) {
