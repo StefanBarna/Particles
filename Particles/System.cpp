@@ -2,12 +2,29 @@
 
 System::System(Vector2D tl, Vector2D br, size_t cnt, UINT pen) :
 	m_cnt(cnt), m_tl(tl), m_br(br), m_pen(pen) {
+	// introduce random for position
+	std::random_device dev;
+	std::default_random_engine rand(dev());
+	std::uniform_real_distribution<float> genPosx(m_tl.x() + 15, m_br.x() - 15);
+	std::uniform_real_distribution<float> genPosy(m_tl.y() + 15, m_br.y() - 15);
+
+	// introduce random for velocity through the maxwell-boltzmann distribution
+	// TODO: introduce accurate boltzmann factor
+	std::gamma_distribution<float> genVel(3.f/2.f, 200.f);
+	std::uniform_int_distribution<int> genSign(0, 1);
+	
 	// introduce particles into region
 	m_particles = new Particle * [cnt];
 	for (size_t i = 0; i < m_cnt; ++i) {
+		float vel = genVel(rand);
+		std::uniform_real_distribution<float> genVelx(0, vel);
+		float velx = genVelx(rand) * std::pow(-1, genSign(rand));
+		float vely = std::sqrt(vel * vel - velx * velx) * std::pow(-1, genSign(rand));
+
 		// TODO: maxwell-boltzmann distribution of energies translated into velocity with KE formula
 		// TODO: radomize positions (below is a temporary implementation for testing)
-		m_particles[i] = new Particle(Vector2D(350.0f - (50.0f * i), 350.0f), Vector2D(200.0f + (i * 40.f), 200.0f + (i * 40.f)), 10.0f, 10.0f, 0xa4cbdb);
+		m_particles[i] = new Particle(Vector2D(genPosx(rand), genPosy(rand)),
+			Vector2D(velx, vely), 10.0f, 10.0f, 0xa4cbdb);
 	}
 }
 
